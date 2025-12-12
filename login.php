@@ -1,0 +1,605 @@
+<?php require_once('Connections/conexion.php');
+
+header('Content-Type: text/html; charset=UTF-8'); 
+
+//initialize the session
+if (!isset($_SESSION)) {
+  session_start();
+}
+
+// ** Logout the current user. **
+$logoutAction = $_SERVER['PHP_SELF']."?doLogout=true";
+if ((isset($_SERVER['QUERY_STRING'])) && ($_SERVER['QUERY_STRING'] != "")){
+  $logoutAction .="&". htmlentities($_SERVER['QUERY_STRING']);
+}
+
+if ((isset($_GET['doLogout'])) &&($_GET['doLogout']=="true")){
+  //to fully log out a visitor we need to clear the session varialbles
+  $_SESSION['MM_Username'] = NULL;
+  $_SESSION['MM_UserGroup'] = NULL;
+  $_SESSION['PrevUrl'] = NULL;
+  unset($_SESSION['MM_Username']);
+  unset($_SESSION['MM_UserGroup']);
+  unset($_SESSION['PrevUrl']);
+  
+  $logoutGoTo = "index.php";
+  if ($logoutGoTo) {
+    header("Location: $logoutGoTo");
+    exit;
+  }
+}
+$MM_authorizedUsers = "admin,op";
+$MM_donotCheckaccess = "false";
+
+// *** Restrict Access To Page: Grant or deny access to this page
+function isAuthorized($strUsers, $strGroups, $UserName, $UserGroup) { 
+  // For security, start by assuming the visitor is NOT authorized. 
+  $isValid = False; 
+
+  // When a visitor has logged into this site, the Session variable MM_Username set equal to their username. 
+  // Therefore, we know that a user is NOT logged in if that Session variable is blank. 
+  if (!empty($UserName)) { 
+    // Besides being logged in, you may restrict access to only certain users based on an ID established when they login. 
+    // Parse the strings into arrays. 
+    $arrUsers = Explode(",", $strUsers); 
+    $arrGroups = Explode(",", $strGroups); 
+    if (in_array($UserName, $arrUsers)) { 
+      $isValid = true; 
+    } 
+    // Or, you may restrict access to only certain users based on their username. 
+    if (in_array($UserGroup, $arrGroups)) { 
+      $isValid = true; 
+    } 
+    if (($strUsers == "") && false) { 
+      $isValid = true; 
+    } 
+  } 
+  return $isValid; 
+}
+
+$MM_restrictGoTo = "index.php";
+if (!((isset($_SESSION['MM_Username'])) && (isAuthorized("",$MM_authorizedUsers, $_SESSION['MM_Username'], $_SESSION['MM_UserGroup'])))) {   
+  $MM_qsChar = "?";
+  $MM_referrer = $_SERVER['PHP_SELF'];
+  if (strpos($MM_restrictGoTo, "?")) $MM_qsChar = "&";
+  if (isset($QUERY_STRING) && strlen($QUERY_STRING) > 0) 
+  $MM_referrer .= "?" . $QUERY_STRING;
+  $MM_restrictGoTo = $MM_restrictGoTo. $MM_qsChar . "accesscheck=" . urlencode($MM_referrer);
+  header("Location: ". $MM_restrictGoTo); 
+  exit;
+}
+/*
+if (!function_exists("GetSQLValueString")) {
+function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDefinedValue = "") 
+{
+  $theValue = get_magic_quotes_gpc() ? stripslashes($theValue) : $theValue;
+
+  $theValue = function_exists("mysql_real_escape_string") ? mysql_real_escape_string($theValue) : mysql_escape_string($theValue);
+
+  switch ($theType) {
+    case "text":
+      $theValue = ($theValue != "") ? "'" . $theValue . "'" : "NULL";
+      break;    
+    case "long":
+    case "int":
+      $theValue = ($theValue != "") ? intval($theValue) : "NULL";
+      break;
+    case "double":
+      $theValue = ($theValue != "") ? "'" . doubleval($theValue) . "'" : "NULL";
+      break;
+    case "date":
+      $theValue = ($theValue != "") ? "'" . $theValue . "'" : "NULL";
+      break;
+    case "defined":
+      $theValue = ($theValue != "") ? $theDefinedValue : $theNotDefinedValue;
+      break;
+  }
+  return $theValue;
+}
+}*/
+if (!function_exists("GetSQLValueString")) {
+  function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDefinedValue = "")
+  {
+  
+  /*Global variable $con is necessary, because it is not known inside the function and you need it for mysqli_real_escape_string($con, $theValue); the Variable $con ist defined as mysqli_connect("localhost","user","password", "database") with an include-script.*/
+    Global $con;
+  
+   if (PHP_VERSION < 6) {
+      $theValue = get_magic_quotes_gpc() ? stripslashes($theValue) : $theValue;
+    }
+  
+    $theValue = mysqli_real_escape_string($con, $theValue);
+  
+    switch ($theType) {
+      case "text":
+        $theValue = ($theValue != "") ? "'" . $theValue . "'" : "NULL";
+        break;   
+      case "long":
+      case "int":
+        $theValue = ($theValue != "") ? intval($theValue) : "NULL";
+        break;
+      case "double":
+        $theValue = ($theValue != "") ? doubleval($theValue) : "NULL";
+        break;
+      case "date":
+        $theValue = ($theValue != "") ? "'" . $theValue . "'" : "NULL";
+        break;
+      case "defined":
+        $theValue = ($theValue != "") ? $theDefinedValue : $theNotDefinedValue;
+        break;
+    }
+     return $theValue;
+  }
+}
+
+/*$maxRows_instancias = 10;
+$pageNum_instancias = 0;
+if (isset($_GET['pageNum_instancias'])) {
+  $pageNum_instancias = $_GET['pageNum_instancias'];
+}
+$startRow_instancias = $pageNum_instancias * $maxRows_instancias;
+
+$query_instancias = "SELECT * FROM instancias_proyecto";
+$query_limit_instancias = sprintf("%s LIMIT %d, %d", $query_instancias, $startRow_instancias, $maxRows_instancias);
+$instancias = mysql_query($query_limit_instancias, $automaa) or die(mysql_error());
+$row_instancias = mysql_fetch_assoc($instancias);
+
+if (isset($_GET['totalRows_instancias'])) {
+  $totalRows_instancias = $_GET['totalRows_instancias'];
+} else {
+  $all_instancias = mysql_query($query_instancias);
+  $totalRows_instancias = mysql_num_rows($all_instancias);
+}
+$totalPages_instancias = ceil($totalRows_instancias/$maxRows_instancias)-1;
+
+$query_procesos = "SELECT * FROM procesos ORDER BY `procesos`.`clave_proceso` ASC";
+$procesos = mysql_query($query_procesos, $automaa) or die(mysql_error());
+$row_procesos = mysql_fetch_assoc($procesos);
+$totalRows_procesos = mysql_num_rows($procesos);*/
+
+$cve_user = $_SESSION['MM_Username'];
+$level = $_SESSION['MM_UserGroup'];
+?>
+<!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Convocatoria PROFEST</title>
+    <!-- CSS -->
+    <link rel="shortcut icon" href="https://framework-gb.cdn.gob.mx/favicon.ico">
+    <link href="https://framework-gb.cdn.gob.mx/assets/styles/main.css" rel="stylesheet">
+    <!-- Respond.js soporte de media queries para Internet Explorer 8 -->
+    <!-- ie8.js EventTarget para cada nodo en Internet Explorer 8 -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/ie8/0.2.2/ie8.js"></script>
+    <![endif]-->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+      <script type="text/javascript" src="js/select_dependientes.js"></script>
+      <script type="text/javascript" src="js/select_dependientes_colonia.js"></script>
+      <script type="text/javascript" src="js/select_dependientes_cp.js"></script>
+      <script type="text/javascript" src="js/select_dependientes_estado.js"></script>
+      <meta charset="UTF-8">
+  </head>
+<body>
+ <?php $action= $_POST['action'];
+        if($action=="elimina_usuario"){
+
+      $numero = $_POST['numero'];
+      $busca_reg_elim_arch = $_POST['busca_reg_elim_arch'];
+
+      $query = "DELETE FROM `usuarios` WHERE `id_usuario` = ".$numero." && `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result= mysqli_query($con, $query);
+
+      $query_sol = "DELETE FROM `solicitud` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_sol= mysqli_query($con, $query_sol);
+
+      $query_proy = "DELETE FROM `proyecto` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_proy= mysqli_query($con, $query_proy);
+
+      $query_presup = "DELETE FROM `mas_presupuesto` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_presup= mysqli_query($con, $query_presup);
+
+      $query_met_num = "DELETE FROM `mas_metas_numericas` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_met_num= mysqli_query($con, $query_met_num);
+
+      $query_mas_lug = "DELETE FROM `mas_lugares` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_mas_lug= mysqli_query($con, $query_mas_lug);
+
+      $query_acciones = "DELETE FROM `cronograma_acciones_ejecucion_festival` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_acciones= mysqli_query($con, $query_acciones);
+
+      $query_anexos = "DELETE FROM `anexos` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_anexos= mysqli_query($con, $query_anexos);
+
+      $query_hono = "DELETE FROM `honorarios_artisticos_academicos_v2` WHERE `clave_usuario` = '".$busca_reg_elim_arch."'";
+      $result_hono= mysqli_query($con, $query_hono);
+     
+        $directorio="anexos/$busca_reg_elim_arch";
+            /*  echo BorrarDirectorio($directorio);
+              function BorrarDirectorio($directorio) {*/
+                //echo "entre a la funci�n la ruta y la carpeta a borrar es =".$directorio;
+                if(is_dir($directorio)) {
+                  foreach (glob("$directorio/*.*") as $filename){ 
+                       unlink($filename); 
+                  } 
+                   $dirmake = rmdir($directorio);
+                } else {}
+              //}
+              
+      if (!$result){
+            //echo "<strong>Error:</strong> No se ha podido eliminar el proceso. <br>Favor de contactar al administrador";
+            //exit;
+            } else {
+            //echo "Proceso eliminado.<br>";
+            //echo "Espere un momento porfavor... <META HTTP-EQUIV='Refresh' CONTENT='4;URL=consul_instancias.php'>";
+            }
+        } // eliminar usuario
+      mysqli_set_charset($con, 'utf8');
+      // informacion para acceso al sistema
+      $sql = "SELECT * FROM `usuarios` WHERE `clave_usuario` LIKE '".$cve_user."' "; 
+      $resultado = mysqli_query($con, $sql);
+      $num_resultados = mysqli_num_rows($resultado);
+      for ($i=0; $i <$num_resultados; $i++){
+          $row = mysqli_fetch_array($resultado, MYSQLI_ASSOC);
+          $nombre = $row["nombre_titular"];
+          $ape_pat = stripslashes($row["primer_apellido"]);
+          $ape_mat = stripslashes($row["segundo_apellido"]);
+          $nombrec = $nombre." ".$ape_pat." ".$ape_mat;
+      }   
+      if($level=="op"){ 
+        echo "<br>Espere un momento por favor..."; 
+        echo "<META HTTP-EQUIV='Refresh' CONTENT='2;URL=login_op.php'>"; 
+        exit; 
+      }
+?>
+     <div class="container top-buffer">
+        <div class="row">
+          <div class="col-sm-8">
+            <ol class="breadcrumb">
+              <li><a href="#"><i class="icon icon-home"></i></a></li>
+              <li><a href="https://profest.cultura.gob.mx/login.php">Inicio</a></li>
+              <li class="active">Administrar</li>
+            </ol>
+          </div>
+          <div class="col-sm-4">
+            <div class="user-credencials">
+              <ul class="list-unstyled">
+                <li>
+                  <span class="user-credencials__name"><?php echo $nombrec; ?></span>
+                </li>
+                <li>Informaci&oacute;n adicional<a href="<?php echo $logoutAction ?>" target="_parent" class="btn btn-link pull-right">Salir</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-8">
+            <h1>Convocatoria PROFEST</h1>
+          </div>
+        </div>
+        <div class="row top-buffer"></div>
+               <div class="alert alert-warning"><div id="countdown"></div></div>
+        <div class="row">
+          <div class="col-sm-12">
+            <ul class="nav nav-tabs">
+              <li><a data-toggle="tab" href="#tab-01">Usuarios</a></li>
+              <li><a data-toggle="tab" href="#tab-02">Anexos solicitantes</a></li>
+              <li><a data-toggle="tab" href="#tab-03">Agregar CP</a></li>
+              <li class="active"><a data-toggle="tab" href="#tab-04">Archivos trazabilidad</a></li>
+              <?php /*li><a data-toggle="tab" href="#tab-05">zip</a></li*/?>
+              <li><a data-toggle="tab" href="#tab-06">Reportes Programación y Presupuesto | Solicitud | Proyecto</a></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane" id="tab-01">
+                <div class="row">
+                    <div class="col-md-8"></div>
+                </div>  
+                 <div class="row">
+                  <div class="col-md-12"> 
+                        <h3>Administrar usuarios</h3>
+                    </div>
+                    <div class="col-md-12"><hr class="red small-margin"></div>
+                 </div>
+              <?php /*div class="row">
+                <a href="agregar_cuenta_usuario.php" target="_self">Agregar usuarios</a>
+              </div*/ ?>
+              <div class="row">
+                <div class="col-md-12">
+                 <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Nombre</th>
+                      <th>Primer Apellido</th>
+                      <th>Segundo Apellido</th>
+                      <?php //th>Correo</th?>
+                      <?php //th>Contrase&ntilde;a</th?>
+                      <?php //th>Puesto</th ?>
+                      <th>Rol</th>
+                      <?php //th>Modificar</th?>
+                      <th>Eliminar registro</th>
+                    </tr>
+                  </thead>
+<?php 
+          $num=0;
+          $j=0;
+                 $query_usu="select * from usuarios where clave_usuario!='' order by nombre_titular,primer_apellido,segundo_apellido;";
+                  $exe_query_usu=mysqli_query($con, $query_usu);     
+                  $num=mysqli_num_rows($exe_query_usu);
+                
+                  while($row=mysqli_fetch_array($exe_query_usu, MYSQLI_ASSOC)){
+                        $id_usuario=$row["id_usuario"];
+                        $nivel_usu=$row["level"];
+                        $administrador=$row["administrador"];
+                        $j=$j+1;
+?>
+                 <tbody>
+                  <tr>
+                    <th scope="row"><?php echo $row["clave_usuario"]?><br>
+                    Correo: <?php echo $row["correo_electronico"]?></td>
+                    <td><?php echo $row["nombre_titular"]; ?></td>
+                    <td><?php echo $row["primer_apellido"]; ?></td>
+                    <td><?php echo $row["segundo_apellido"]; ?></td>
+                    <?php /*td></td><?php /*td><?php echo $row["contrasena_usuario"]?></td*/?>
+                    <td><?php if($administrador==0){ echo "Op."; } else { echo "Admin."; } ?></td>
+                <!--td><a href="modificar_cuentas_usuario.php?numero=<?php echo $id_usuario; ?>" target="_parent"><span class="glyphicon glyphicon-edit"></span></a></td-->
+                    <td>
+                      <form action='login.php' method='post' name='form10_jat' id='form10_jat' target="_self">
+                        <input name='numero' type='hidden' id='numero' value='<?php echo $id_usuario; ?>' />
+                        <input name='busca_reg_elim_arch' type='hidden' id='busca_reg_elim_arch' value='<?php echo $row["clave_usuario"]; ?>' />
+                        <input name='action' type='hidden' id='action' value='elimina_usuario' />
+                        <input type='image' src='imagenes/delete-icon.png' onClick="return confirm('Deseas borrar este usuario?')"/>
+                      </form>
+                    </td>
+                  </tr>
+                  <?php } ?>
+                   </tbody>
+                </table>
+                </div>
+               </div>
+              </div>
+              <!----------- (INICIO) PESTA�A Consulta anexos solicitantes ----------->
+              <div class="tab-pane" id="tab-02">
+               <div class="row">
+                  <div class="col-md-8"></div>
+                </div>  
+                <div class="row">
+                  <div class="col-md-12"> 
+                     <h3>Anexos solicitantes</h3>
+                  </div>
+                  <div class="col-md-12"><hr class="red small-margin"></div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Nombre</th>
+                          <th>Correo</th>
+                          <th>Clave usuario</th>
+                          <th>Anexos</th>
+                          <th>Cierre</th>
+                          <th>fecha_hora_cierre_total</th>
+                          <th>Estatus</th>
+                        </tr>
+                      </thead>
+          <?php 
+          $num=0;
+          $j=0;
+                 echo  $query_usu="select usuarios.id_usuario, usuarios.nombre_titular, usuarios.primer_apellido, usuarios.segundo_apellido, 
+          usuarios.correo_electronico, usuarios.administrador, usuarios.level, solicitud.cerrrado, solicitud.clave_usuario, solicitud.fecha_hora_cierre_total  
+          from usuarios, solicitud where usuarios.clave_usuario = solicitud.clave_usuario 
+          order by solicitud.cerrrado,solicitud.fecha_hora_cierre_total;";
+                  $exe_query_usu=mysqli_query($con, $query_usu);     
+                  $num=mysqli_num_rows($exe_query_usu);
+                  while($row=mysqli_fetch_array($exe_query_usu, MYSQLI_ASSOC)){
+                        $id_usuario=$row["id_usuario"];
+                        $nivel_usu=$row["level"];
+                        $administrador=$row["administrador"];
+                        $paso_usu_selec = $row["clave_usuario"];
+                        $fecha_hora_cierre_total = $row["fecha_hora_cierre_total"];
+                        $j=$j+1;
+                  ?>
+                 <tbody>
+                  <tr>
+                    <th scope="row"><?php echo $j; ?></th>
+                    <td><?php echo $row["nombre_titular"]; ?></td>
+                    <td><?php echo $row["correo_electronico"]?></td>
+                    <td><?php echo $paso_usu_selec; ?></td>
+                    <td><a href="ver_solicitud.php?paso_usu_selec=<?php echo $paso_usu_selec;?>" target="_blank" border="0"><span class="glyphicon glyphicon-list" aria-hidden="true"></span></a>
+                    </td>
+                    <td><?php if($row["cerrrado"]==1){ echo "Cerrado"; } else { echo "En proceso"; } ?></td>
+                    <td><?php           
+          $fecha_actual = strtotime(date("2019-05-05 18:00:00",time()));
+          $fecha_entrada = strtotime($fecha_hora_cierre_total);
+            
+          if($fecha_entrada > $fecha_actual){
+              echo "<strong>".$fecha_hora_cierre_total.'</strong>';
+            } else {
+              echo $fecha_hora_cierre_total;
+              }
+          ?>
+          </td>
+          <td>
+          <?php 
+           $query_user="SELECT * FROM anexos
+                where clave_usuario='".$paso_usu_selec."' group by clave_usuario";
+                $res_user =  mysqli_query($con, $query_user);
+                while($fila=mysqli_fetch_array($res_user)) {
+                      $estatus=$fila['estatus'];
+                }
+                if(empty($estatus)) echo "Sin estatus"; else echo $estatus;
+          ?></td>
+        </tr>
+      <?php } ?>
+                   </tbody>
+                </table>
+                  </div>
+                </div>
+              </div>
+              <!----------- (FIN) PESTA�A Consulta anexos solicitantes ----------->
+              
+              <!----------- (INICIO) PESTA�A Cat�logo CP ----------->
+               <div class="tab-pane" id="tab-03">
+                <div class="row">
+                  <div class="col-md-12"> 
+                     <h3>Catálogo CP</h3>
+                  </div>
+                  <div class="col-md-12"><hr class="red small-margin"></div>
+                </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Copci&oacute;ndigo Postal:</label>
+                                    <input type="text" id="PostCodRepLeg" name="PostCodRepLeg" class="form-control" placeholder="Ingresa el c&oacute;digo postal" onBlur="cargaContenido4(this.id)" onKeyPress="return soloNumeros(event)" maxlength="5">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                      <?php
+                                        $consulta_p="SELECT c_estado, d_estado FROM codigos_postales group by d_estado order by d_estado";
+                                        $consulta=mysqli_query($con, $consulta_p);
+                                     ?>
+                                     <label>Estado:</label>
+                                     <select id="EstadoRepLeg" name="EstadoRepLeg" class="form-control" onChange='cargaContenido(this.id)'>
+                                       <option value="">Selecciona una opci&oacute;n</option>
+                                           <?php 
+                                                while($registro=mysqli_fetch_row($consulta, MYSQLI_ASSOC)){
+                                                echo "<option value='".$registro[0]."'>".$registro[1]."</option>";
+                                                }
+                                           ?>
+                                      </select>
+                               </div>
+                             </div>
+                             <div class="col-md-4">
+                                <div class="form-group">
+                                      <label>Municipio o Alcaldi&iacute;a:</label>
+                                      <select id="Municipio_AlcRepLeg" name="Municipio_AlcRepLeg" class="form-control" disabled>
+                                        <option value="">Selecciona una opci&oacute;n</option>
+                                      </select>
+                                </div>
+                             </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                      <label>Colonia:</label>
+                                      <select id="ColoniaRepLeg" name="ColoniaRepLeg" class="form-control" disabled>
+                                        <option value="">Selecciona una opci&oacute;n</option>
+                                      </select>
+                                </div>
+                            </div>  
+                        </div>         
+            </div>
+              <!----------- (FIN) PESTA�A Cat�logo CP ----------->
+              
+          <div class="tab-pane active" id="tab-04">
+          
+          <!-- INICIO PESTA�A "AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII" -->
+
+          <div class="row">
+            <div class="col-md-8"></div>
+          </div>  
+          <div class="row">
+            <div class="col-md-12"> 
+              <h3>Descarga de archivos excel de la plataforma</h3>
+              <p>Seleccionar el archivo a descargar</p>
+            </div>
+            <div class="col-md-12"><hr class="red small-margin"></div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Directorio</label> 
+              </div>
+                <form action="reporte/reporte_excel_trazabilidad/Excel_dir.php">
+                  <button type="action" class="btn btn-primary">Descargar Directorio Nuevo</button> 
+                </form>
+          </div>
+            <div class="col-md-4">
+            <div class="form-group">
+              <label>Concentrado registros</label>
+            </div>
+              <form action="excel_concentrado/reporte_excel1.php" target="_new">
+                <button type="action" class="btn btn-primary">Generar Trazabilidad Nuevo</button> 
+              </form> 
+              <form action="excel_concentrado/temp/nombredearchivo.xlsx" target="_parent">
+                <button type="action" class="btn btn-primary">Descargar excel Trazabilidad Nuevo</button> 
+              </form> 
+          </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Trazabilidad Proyectos que concluyeron registro</label>  
+              </div>
+              <form action="reporte/reporte_excel_trazabilidad/Excel_dir.php">
+                <button type="action" class="btn btn-primary">Descargar Directorio Nuevo</button> 
+              </form>
+            </div>
+          </div>
+              <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                            <label>Trazabilidad Proyectos que concluyeron registro hasta 17052019</label> 
+                    </div>
+               </div>
+             </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <form action="reporte_trazabilidad_17052019/reporte_trazabilidad_directorio.php">
+                      <button type="action" class="btn btn-primary">1. Directorio</button> 
+                    </form>
+                </div>
+                <div class="col-md-4">
+                    <form action="reporte_trazabilidad_17052019/reporte_trazabilidad_deOrigen.php">
+                      <button type="action" class="btn btn-primary">2. Trazabilidad de origen</button> 
+                    </form>
+                </div>
+                <div class="col-md-4">
+                    <form action="reporte_trazabilidad_17052019/reporte_trazabilidad_evaluacion.php">
+                      <button type="action" class="btn btn-primary">3. Evaluaci&oacute;n</button> 
+                    </form>
+                </div>
+            </div>
+      <!-- FIN Pesta�a "AQUIIIIIIIIIIIIIIIIII"-->
+          </div>   
+          <!----------- (INICIO) PESTA�A zip  ----------->
+               <?php /*div class="tab-pane" id="tab-05">
+                <div class="row">
+                  <div class="col-md-12"> 
+                     <h3>Comprimir documentos de postulantes</h3>
+                  </div>
+                  <div class="col-md-12"><hr class="red small-margin"></div>
+                </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <iframe src="Comprimir archivos en ZIP con PHP/index.php" width="1050" height="250" frameborder="0"></iframe>
+                            </div>
+                        </div>
+            </div*/?>
+              <!----------- (FIN) PESTA�A zip ----------->
+            <div class="tab-pane" id="tab-06">
+            
+              <div class="row">
+                <div class="col-md-12"> 
+                  <h3>Reportes Programación y Presupuesto | Solicitud | Proyecto</h3>
+                </div>
+                <div class="col-md-12"><hr class="red small-margin"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-4"><?php include("genera_reporte_PRESUPUESTO_PROGRAMACION_generar_interno.php"); ?></div>
+              </div>
+            </div>
+        </div>
+      </div> 
+    </div>
+</div> 
+<div class="bottom-buffer"></div>
+  
+<div id="countdown"></div>
+<?php //mysql_free_result($instancias); ?>
+       <script type="text/javascript" src="https://framework-gb.cdn.gob.mx/gobmx.js"></script>
+  </body>
+</html>
