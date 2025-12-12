@@ -1,0 +1,289 @@
+function validarEnvio(){
+	/* Ventena emergente */
+	var rowError = document.getElementById('rowError');
+
+	/* Variables de la primera parte */
+	/* Primera fila */
+	var tipo_de_instanciaEsc = document.getElementById('tipo_de_instancia');
+	var errtipo_de_instancia= document.getElementById('errtipo_de_instancia');
+	var errtipo_de_instanciaAs= document.getElementById('errtipo_de_instanciaAs');
+	
+	var Nombre_InstEsc = document.getElementById('Nombre_Inst');
+	var errNombre_Inst= document.getElementById('errNombre_Inst');
+	var errNombre_InstAs= document.getElementById('errNombre_InstAs');
+	
+	var nombre_titularEsc = document.getElementById('nombre_titular');
+	var errnombre_titular= document.getElementById('errnombre_titular');
+	var errnombre_titularAs= document.getElementById('errnombre_titularAs');
+	
+	var nprimer_apellidoEsc = document.getElementById('primer_apellido');
+	var errprimer_apellido= document.getElementById('errprimer_apellido');
+	var errprimer_apellidoAs= document.getElementById('errprimer_apellidoAs');
+	
+	var gradoEsc = document.getElementById('grado');
+	var errgrado= document.getElementById('errgrado');
+	var errgradoAs= document.getElementById('errgradoAs');
+
+	var cargoEsc = document.getElementById('cargo');
+	var errcargo= document.getElementById('errcargo');
+	var errcargoAs= document.getElementById('errcargoAs');
+	
+	var CorreoEsc = document.getElementById('Correo');
+	var errCorreo= document.getElementById('errCorreo');
+	var errCorreoAs= document.getElementById('errCorreoAs');
+	
+	var PostCodRepLegEsc = document.getElementById('PostCodRepLeg');
+	var errPostCodRepLeg= document.getElementById('errPostCodRepLeg');
+	var errPostCodRepLegAs= document.getElementById('errPostCodRepLegAs');
+
+	var CalleRepLegEsc = document.getElementById('CalleRepLeg');
+	var errCalleRepLeg= document.getElementById('errCalleRepLeg');
+	var errCalleRepLegAs= document.getElementById('errCalleRepLegAs');
+
+	/* Segunda fila */
+	var EstadoRepLegEsc = document.getElementById('EstadoRepLeg');
+	var errEstadoRepLeg= document.getElementById('errEstadoRepLeg');
+	var errEstadoRepLegAs= document.getElementById('errEstadoRepLegAs');
+
+	var Municipio_AlcRepLegEsc = document.getElementById('Municipio_AlcRepLeg');
+	var errMunicipio_AlcRepLeg= document.getElementById('errMunicipio_AlcRepLeg');
+	var errMunicipio_AlcRepLegAs= document.getElementById('errMunicipio_AlcRepLegAs');
+
+
+	/* Tercera fila */
+	var ColoniaRepLegEsc = document.getElementById('ColoniaRepLeg');
+	var errColoniaRepLeg= document.getElementById('errColoniaRepLeg');
+	var errColoniaRepLegAs= document.getElementById('errColoniaRepLegAs');
+
+	/*var InteriorRepLegEsc = document.getElementById('InteriorRepLeg');
+	var errInteriorRepLeg= document.getElementById('errInteriorRepLeg');
+	var errInteriorRepLegAs= document.getElementById('errInteriorRepLegAs');*/
+
+	var ExteriorRepLegEsc = document.getElementById('ExteriorRepLeg');
+	var errExteriorRepLeg= document.getElementById('errExteriorRepLeg');
+	var errExteriorRepLegAs= document.getElementById('errExteriorRepLegAs');
+
+	var LadaRepLegEsc = document.getElementById('LadaRepLeg');
+	var errLadaRepLeg= document.getElementById('errLadaRepLeg');
+	var errLadaRepLegAs= document.getElementById('errLadaRepLegAs');
+
+	var TelefonoRepLegEsc = document.getElementById('TelefonoRepLeg');
+	var errTelefonoRepLeg= document.getElementById('errTelefonoRepLeg');
+	var errTelefonoRepLegAs= document.getElementById('errTelefonoRepLegAs');
+	
+	/* Boton de Envío */
+	var btnEnvio = document.getElementById('submit1');
+
+	/* Arreglo de variables (especificamente las cajas de texto)*/
+	
+	var campos = [
+		Nombre_InstEsc,
+		nombre_titularEsc,
+		primer_apellidoEsc,
+		gradoEsc,
+		CorreoEsc,
+		cargoEsc,
+		PostCodRepLegEsc,
+		CalleRepLegEsc,
+		EstadoRepLegEsc,
+		Municipio_AlcRepLegEsc,
+		ColoniaRepLegEsc,
+		ExteriorRepLegEsc,
+		LadaRepLegEsc,
+		TelefonoRepLegEsc
+	];//InteriorRepLegEsc,
+
+	//Variables de los mensajes "Este campo es obligatorio"	
+	var mensaje = [
+		errNombre_Inst,
+		errnombre_titular,
+		errprimer_apellido,
+		errgrado,
+		errCorreo,
+		errcargo,
+		errPostCodRepLeg,
+		errCalleRepLeg,
+		errEstadoRepLeg,
+		errMunicipio_AlcRepLeg,
+		errColoniaRepLeg,
+		errExteriorRepLeg,
+		errLadaRepLeg,
+		errTelefonoRepLeg
+	];
+		//errInteriorRepLeg,
+
+	//Variables de los asteriscos
+	
+	var asteriscos = [
+		errNombre_InstAs,
+		errnombre_titularAs,
+		errprimer_apellidoAs,
+		errgradoAs,
+		errCorreoAs,
+		errcargoAs,
+		errPostCodRepLegAs,
+		errCalleRepLegAs,
+		errEstadoRepLegAs,
+		errMunicipio_AlcRepLegAs,
+		errColoniaRepLegAs,
+		errExteriorRepLegAs,
+		errLadaRepLegAs,
+		errTelefonoRepLegAs
+	];
+		//errInteriorRepLegAs,
+
+	//Variables de los combobox
+	var comboEsc = [
+		tipo_de_instanciaEsc
+		//DocProbInstPerEsc	
+	];
+	var errcomboAs =[
+		errtipo_de_instanciaAs
+		//errDocProbInstPerAs
+	];
+	var errcombo =[
+		errtipo_de_instancia
+		//errDocProbInstPer
+	];	
+
+		/* Contador */
+	var i=0;
+
+	//Variable que contiene el arreglo comboBox
+	var selec = comboEsc;
+
+	//El capturador de errores
+	var cuenta_error=0;
+	
+	var extra_for = 1;
+	var cuenta_campo = 0;
+	
+
+	//Todos y cada uno de los campos de texto
+	for ( i=0 ; i < campos.length ; i++) {
+
+			var tomar_valor_a = campos[i].value;
+			//console.log(tomar_valor_a[i] != '');
+
+			if (tomar_valor_a == '')
+			{
+				rowError.style.display = 'block';
+				var err_arreglo = mensaje[i];
+				var as_arreglo = asteriscos[i];
+				var esc_arreglo = campos[i];
+
+				err_arreglo.style.display = 'block';
+				as_arreglo.className = 'form-text form-text-error';
+                esc_arreglo.className = 'form-control form-control-error'; 
+
+                cuenta_error++;
+
+            }else if(tomar_valor_a != ''){
+            	var err_arreglo = mensaje[i];
+				var as_arreglo = asteriscos[i];
+				var esc_arreglo = campos[i];
+
+				err_arreglo.style.display = 'none';
+				as_arreglo.className = 'control-label';
+                esc_arreglo.className = 'form-control';
+            }
+
+			for(var j=0; j < selec.length ; j++){
+				if(selec[j].options[selec[j].selectedIndex].value == 0){
+					if(rowError.style.display !== 'block')
+						rowError.style.display = 'block';
+					comboEsc[j].className = 'form-control form-control-error' ;
+					errcomboAs[j].className = 'form-text form-text-error' ;
+					errcombo[j].style.display = 'block';
+					switch (extra_for){
+						case 1:
+							cuenta_error++;
+							cuenta_campo++;
+							if(cuenta_campo == 2){
+								extra_for = 2;
+							}
+						break;
+						default: break;
+					}
+				}else if(selec[j].options[selec[j].selectedIndex].value != 0){
+
+					comboEsc[j].className = 'form-control' ;
+					errcomboAs[j].className = 'control-label' ;
+					errcombo[j].style.display = 'none';
+				}
+
+			}//fin del ciclo for interno
+			
+			
+	}//fin del ciclo for 
+
+	
+	
+	if(cuenta_error == 0){
+		window.document.apInf.submit();
+ 	}  
+
+}
+
+
+/*$gmx(document).ready( function() {
+	$('[data-toggle="tooltip"]').tooltip();
+});*/
+
+$(document).ready(function(){
+	$("#submit1").click( function (event){
+			//bloqueamos la función del anchor original
+            event.preventDefault();
+
+			//dirigimos de manera animada al id del anchor
+			//if(){
+			if($("samp.form-text-error").offset() != null){
+				var desplazamiento_ver = $("samp.form-text-error").offset().top-250;
+    	    	$('html,body').animate({
+    	      	  //le indicamos al scroll vertical que se dirija al objeto con el id
+    	      	  //guardado en el anchor a su posición top.
+    	      	  scrollTop:desplazamiento_ver
+    	      	  },1000);
+    	   	}
+    	    //}
+		//}
+	//}
+	});
+});
+
+
+/* Validacion de e-mail(inicio) */
+function validarEmail(idCampo) {
+	
+if(idCampo == 'Correo'){
+var CorreoEsc = document.getElementById('Correo').value;
+var CorreoEsc_campo = document.getElementById('Correo');
+
+var emailRegex = /^[-\w.%+]{1,64}@(?:[A-Z0-9-]{1,63}\.){1,125}[A-Z]{2,63}$/i;
+
+//console.log(document.getElementById('Correo').value);
+
+  if (emailRegex.test(CorreoEsc)){
+   //alert("La dirección de email " + CorreoEsc + " es correcta.");
+  //emailOK.innerText = "correcto";
+	errCorreoAs.className = 'form-text';
+	emailOK.innerText = "";
+	CorreoEsc_campo.className = 'form-control' ;
+  }else{
+  	
+  	document.getElementById('emailOK').className = 'form-text form-text-error';
+  	document.getElementById('emailOK').innerText="Ingresa un correo electrónico correcto";
+	
+	//alert("La dirección de email es incorrecta.");
+  	errCorreoAs.className = 'form-text form-text-error';
+  	// esc_arreglo.className = 'form-control form-control-error'; 
+  	CorreoEsc_campo.className = 'form-control form-control-error' ;
+		
+  	}
+  }
+}
+
+/* Validacion de e-mail(fin) */
+
+
+
